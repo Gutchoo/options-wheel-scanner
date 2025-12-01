@@ -2,6 +2,8 @@
 
 A real-time options scanner for identifying high-value selling opportunities across S&P 500 and S&P 100 stocks.
 
+![Demo](docs/demo.gif)
+
 ## What It Does
 
 Scans thousands of options contracts to surface the best candidates for selling cash-secured puts and covered calls based on your criteria:
