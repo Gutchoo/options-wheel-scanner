@@ -237,7 +237,7 @@ class ScannerService:
 
     async def _fetch_stock_info(self, tickers: list[str], prices: dict) -> dict:
         """
-        Fetch P/E ratios and names for pre-filtered tickers only.
+        Fetch P/E ratios, names, and earnings dates for pre-filtered tickers only.
         """
         cache_key = f"info_{hash(tuple(sorted(tickers[:20])))}"
         cached = cache_service.get(cache_key)
@@ -254,16 +254,29 @@ class ScannerService:
                     t = yf.Ticker(ticker)
                     info = t.info
 
+                    # Get next earnings date from calendar
+                    next_earnings = None
+                    try:
+                        calendar = t.calendar
+                        if calendar and isinstance(calendar, dict):
+                            earnings_dates = calendar.get("Earnings Date")
+                            if earnings_dates and isinstance(earnings_dates, list) and len(earnings_dates) > 0:
+                                next_earnings = earnings_dates[0]  # First date is the next one
+                    except Exception:
+                        pass
+
                     result[ticker] = {
                         "price": prices.get(ticker),
                         "pe_ratio": float(info.get("trailingPE")) if info.get("trailingPE") else None,
                         "name": info.get("shortName", ticker),
+                        "next_earnings_date": next_earnings,
                     }
                 except Exception:
                     result[ticker] = {
                         "price": prices.get(ticker),
                         "pe_ratio": None,
                         "name": ticker,
+                        "next_earnings_date": None,
                     }
 
             return result
@@ -318,6 +331,7 @@ class ScannerService:
                 return results
 
             pe_ratio = stock_data.get("pe_ratio")
+            next_earnings_date = stock_data.get("next_earnings_date")
 
             for exp_date in expirations:
                 # Calculate DTE
@@ -356,6 +370,7 @@ class ScannerService:
                             dte,
                             opt_type,
                             pe_ratio,
+                            next_earnings_date,
                             request,
                         )
                         if option:
@@ -368,13 +383,15 @@ class ScannerService:
     def _serialize_result(self, option: OptionResult) -> dict:
         """Convert OptionResult to JSON-serializable dict."""
         data = option.model_dump()
-        # Convert date to string
+        # Convert dates to strings
         if isinstance(data.get("expiration"), date):
             data["expiration"] = data["expiration"].isoformat()
+        if isinstance(data.get("next_earnings_date"), date):
+            data["next_earnings_date"] = data["next_earnings_date"].isoformat()
         return data
 
     def _process_option_row(
-        self, row, ticker, stock_price, exp, dte, opt_type, pe_ratio, request
+        self, row, ticker, stock_price, exp, dte, opt_type, pe_ratio, next_earnings_date, request
     ) -> Optional[OptionResult]:
         """Process a single option and apply filters."""
 
@@ -443,6 +460,7 @@ class ScannerService:
             annualized_roi=round(annualized_roi, 2),
             moneyness=moneyness,
             pe_ratio=round(pe_ratio, 2) if pe_ratio else None,
+            next_earnings_date=next_earnings_date,
         )
 
 

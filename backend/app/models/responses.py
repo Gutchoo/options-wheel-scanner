@@ -29,6 +29,7 @@ class OptionResult(BaseModel):
     annualized_roi: float  # ROI * (365 / dte)
     moneyness: str  # "ITM" or "OTM"
     pe_ratio: Optional[float] = None
+    next_earnings_date: Optional[date] = None
 
 
 class ScanProgressEvent(BaseModel):
