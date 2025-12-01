@@ -183,6 +183,7 @@ class ScannerService:
                     period="1d",
                     progress=False,
                     threads=True,
+                    auto_adjust=False,
                 )
 
                 if data.empty:

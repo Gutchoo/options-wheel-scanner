@@ -53,7 +53,7 @@ async def get_stock_info(ticker: str):
 @router.get("/stock/{ticker}/price", tags=["Stock Info"])
 async def get_stock_price(ticker: str):
     """Get current stock price via yf.download()"""
-    data = yf.download(ticker, period="1d", progress=False)
+    data = yf.download(ticker, period="1d", progress=False, auto_adjust=False)
     if data.empty:
         return {"ticker": ticker, "price": None, "error": "No data"}
     price = data["Close"].iloc[-1]
@@ -67,7 +67,7 @@ async def get_stock_price(ticker: str):
 async def get_batch_prices(tickers: str = Query(..., description="Comma-separated tickers")):
     """Get batch prices for multiple tickers via yf.download()"""
     ticker_list = [t.strip().upper() for t in tickers.split(",")]
-    data = yf.download(ticker_list, period="1d", progress=False, threads=True)
+    data = yf.download(ticker_list, period="1d", progress=False, threads=True, auto_adjust=False)
 
     result = {}
     if data.empty:
