@@ -50,3 +50,25 @@ class ScanCompleteEvent(BaseModel):
     status: ScanStatus
     total_results: int
     scan_duration_seconds: float
+
+
+# Heatmap models
+class HeatmapStock(BaseModel):
+    ticker: str
+    name: str
+    price: float
+    change: float  # Percentage change
+    market_cap: Optional[float] = None
+
+
+class HeatmapSector(BaseModel):
+    name: str
+    change: float  # Average sector change
+    stocks: list[HeatmapStock]
+
+
+class HeatmapResponse(BaseModel):
+    sectors: list[HeatmapSector]
+    period: str
+    universe: str
+    generated_at: str

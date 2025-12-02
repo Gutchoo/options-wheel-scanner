@@ -1,10 +1,11 @@
 "use client";
 
-import { ScannerPanel } from "@/components/scanner/scanner-panel";
-import { ResultsTable } from "@/components/results/results-table";
-import { useScanFilters } from "@/hooks/use-scan-filters";
-import { useScanner } from "@/hooks/use-scanner";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Navbar, Route } from "@/components/nav/navbar";
+import { PageCarousel } from "@/components/nav/page-carousel";
+import { ScannerPage } from "@/components/pages/scanner-page";
+import { HeatmapPage } from "@/components/pages/heatmap-page";
+import { SnapshotPage } from "@/components/pages/snapshot-page";
 
 declare global {
   interface Window {
@@ -16,6 +17,8 @@ declare global {
 }
 
 export default function HomePage() {
+  const [activeRoute, setActiveRoute] = useState<Route>("scanner");
+
   useEffect(() => {
     if (!window.UnicornStudio) {
       window.UnicornStudio = { isInitialized: false, init: () => {} };
@@ -31,23 +34,6 @@ export default function HomePage() {
       document.head.appendChild(script);
     }
   }, []);
-  const { filters, updateFilter, resetFilters } = useScanFilters();
-  const {
-    results,
-    isScanning,
-    progress,
-    message,
-    error,
-    tickersScanned,
-    tickersTotal,
-    currentTicker,
-    scan,
-    cancelScan,
-  } = useScanner();
-
-  const handleScan = () => {
-    scan(filters);
-  };
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
@@ -57,36 +43,18 @@ export default function HomePage() {
         className="absolute inset-0 w-full h-full"
       />
 
-      {/* Content */}
-      <div className="relative z-10 h-full w-full flex items-center justify-center p-[1vw]">
-        <div className="flex items-stretch gap-[0.5vw] w-[96vw] h-[92vh]">
-          {/* Left: Scanner Panel - Proportional width (~22% of viewport) */}
-          <aside className="w-[22vw] shrink-0">
-            <ScannerPanel
-              filters={filters}
-              updateFilter={updateFilter}
-              resetFilters={resetFilters}
-              onScan={handleScan}
-              onCancel={cancelScan}
-              isScanning={isScanning}
-              progress={progress}
-            />
-          </aside>
+      {/* Navbar */}
+      <Navbar activeRoute={activeRoute} onRouteChange={setActiveRoute} />
 
-          {/* Right: Results Table - Takes remaining width */}
-          <main className="flex-1 overflow-hidden flex flex-col">
-            <ResultsTable
-              results={results}
-              isScanning={isScanning}
-              progress={progress}
-              message={message}
-              error={error}
-              tickersScanned={tickersScanned}
-              tickersTotal={tickersTotal}
-              currentTicker={currentTicker}
-            />
-          </main>
-        </div>
+      {/* Content with top padding for navbar */}
+      <div className="relative z-10 h-full w-full pt-20">
+        <PageCarousel activeRoute={activeRoute}>
+          {{
+            scanner: <ScannerPage />,
+            heatmap: <HeatmapPage />,
+            snapshot: <SnapshotPage />,
+          }}
+        </PageCarousel>
       </div>
     </div>
   );
