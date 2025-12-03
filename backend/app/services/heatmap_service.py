@@ -58,7 +58,7 @@ class HeatmapService:
                 tickers,
                 period=yf_period,
                 progress=False,
-                threads=False,  # Disable threads to prevent memory leak
+                threads=True,
                 auto_adjust=False,
             )
 
@@ -202,8 +202,8 @@ class HeatmapService:
             cached_at=cached_at,
         )
 
-        # Cache for 2 minutes (synced with frontend CACHE_TTL)
-        cache_service.set(cache_key, response.model_dump(), ttl=120)
+        # Cache for 1 hour to minimize memory-leaking yf.download calls
+        cache_service.set(cache_key, response.model_dump(), ttl=3600)
 
         return response
 
