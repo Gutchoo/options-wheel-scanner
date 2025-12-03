@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -94,6 +95,8 @@ class HeatmapService:
                         "change": float(pct_change),
                     }
 
+            # Explicitly delete DataFrame to help GC
+            del data
             return changes
 
         def fetch_info(tickers_to_fetch):
@@ -120,6 +123,9 @@ class HeatmapService:
 
         # Fetch price changes
         changes = await loop.run_in_executor(self.executor, fetch_data)
+
+        # Force garbage collection to free DataFrame memory
+        gc.collect()
 
         if not changes:
             now = datetime.now()
