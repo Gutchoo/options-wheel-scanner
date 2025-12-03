@@ -72,3 +72,4 @@ class HeatmapResponse(BaseModel):
     period: str
     universe: str
     generated_at: str
+    cached_at: float  # Unix timestamp (ms) when data was fetched from yfinance

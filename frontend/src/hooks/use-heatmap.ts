@@ -1,18 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  HeatmapResponse,
-  HeatmapPeriod,
-  HeatmapUniverse,
-} from "@/types/heatmap";
+import { HeatmapResponse, HeatmapPeriod } from "@/types/heatmap";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in ms
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes - synced with backend
 
-interface UseHeatmapOptions {
-  universe: HeatmapUniverse;
-  period: HeatmapPeriod;
+interface CacheEntry {
+  data: HeatmapResponse;
 }
 
 interface UseHeatmapReturn {
@@ -20,74 +15,109 @@ interface UseHeatmapReturn {
   isLoading: boolean;
   error: string | null;
   secondsUntilRefresh: number;
-  refresh: () => void;
 }
 
-export function useHeatmap({
-  universe,
-  period,
-}: UseHeatmapOptions): UseHeatmapReturn {
+// Module-level cache persists across hook instances and period changes
+const cache: Map<HeatmapPeriod, CacheEntry> = new Map();
+
+export function useHeatmap(period: HeatmapPeriod): UseHeatmapReturn {
   const [data, setData] = useState<HeatmapResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [secondsUntilRefresh, setSecondsUntilRefresh] = useState(
-    REFRESH_INTERVAL / 1000
-  );
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = useState(CACHE_TTL / 1000);
 
-  const lastFetchRef = useRef<number>(0);
+  const cachedAtRef = useRef<number>(0); // Tracks backend's cached_at timestamp
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchHeatmap = useCallback(async () => {
-    setIsLoading(true);
+  // Check if cached data is still valid using backend's cached_at
+  const getCachedData = useCallback((p: HeatmapPeriod): CacheEntry | null => {
+    const entry = cache.get(p);
+    if (entry && Date.now() - entry.data.cached_at < CACHE_TTL) {
+      return entry;
+    }
+    return null;
+  }, []);
+
+  // Fetch data from API
+  const fetchFromApi = useCallback(async (p: HeatmapPeriod): Promise<HeatmapResponse> => {
+    const response = await fetch(`${API_URL}/api/v1/heatmap?period=${p}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch heatmap: ${response.statusText}`);
+    }
+    return response.json();
+  }, []);
+
+  // Main fetch function - checks cache first
+  const fetchHeatmap = useCallback(async (p: HeatmapPeriod, forceRefresh = false) => {
     setError(null);
 
-    try {
-      const response = await fetch(
-        `${API_URL}/api/v1/heatmap?universe=${universe}&period=${period}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch heatmap: ${response.statusText}`);
+    // Check cache first (unless forcing refresh)
+    if (!forceRefresh) {
+      const cached = getCachedData(p);
+      if (cached) {
+        setData(cached.data);
+        cachedAtRef.current = cached.data.cached_at;
+        setIsLoading(false);
+        return;
       }
+    }
 
-      const result: HeatmapResponse = await response.json();
+    setIsLoading(true);
+
+    try {
+      const result = await fetchFromApi(p);
+
+      // Update cache using backend's cached_at
+      cache.set(p, { data: result });
+      cachedAtRef.current = result.cached_at;
+
       setData(result);
-      lastFetchRef.current = Date.now();
-      setSecondsUntilRefresh(REFRESH_INTERVAL / 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch heatmap");
     } finally {
       setIsLoading(false);
     }
-  }, [universe, period]);
+  }, [getCachedData, fetchFromApi]);
 
-  // Initial fetch and refetch on params change
+  // Handle period changes - use cache if available
   useEffect(() => {
-    fetchHeatmap();
-  }, [fetchHeatmap]);
+    const cached = getCachedData(period);
+    if (cached) {
+      // Use cached data instantly, use backend's cached_at for countdown
+      setData(cached.data);
+      cachedAtRef.current = cached.data.cached_at;
+      setIsLoading(false);
+    } else {
+      // No valid cache, fetch from API
+      fetchHeatmap(period);
+    }
+  }, [period, getCachedData, fetchHeatmap]);
 
-  // Auto-refresh interval
+  // Auto-refresh timer - refreshes when backend cache would expire
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      fetchHeatmap();
-    }, REFRESH_INTERVAL);
+    const checkAndRefresh = () => {
+      const age = Date.now() - cachedAtRef.current;
+      if (age >= CACHE_TTL) {
+        fetchHeatmap(period, true); // Force refresh
+      }
+    };
+
+    // Check every second if we need to refresh
+    intervalRef.current = setInterval(checkAndRefresh, 1000);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchHeatmap]);
+  }, [period, fetchHeatmap]);
 
-  // Countdown timer
+  // Countdown timer - shows time until backend cache expires
   useEffect(() => {
     countdownRef.current = setInterval(() => {
-      const elapsed = Date.now() - lastFetchRef.current;
-      const remaining = Math.max(
-        0,
-        Math.ceil((REFRESH_INTERVAL - elapsed) / 1000)
-      );
+      const elapsed = Date.now() - cachedAtRef.current;
+      const remaining = Math.max(0, Math.ceil((CACHE_TTL - elapsed) / 1000));
       setSecondsUntilRefresh(remaining);
     }, 1000);
 
@@ -98,15 +128,10 @@ export function useHeatmap({
     };
   }, []);
 
-  const refresh = useCallback(() => {
-    fetchHeatmap();
-  }, [fetchHeatmap]);
-
   return {
     data,
     isLoading,
     error,
     secondsUntilRefresh,
-    refresh,
   };
 }

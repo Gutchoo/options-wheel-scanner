@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -9,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useHeatmap } from "@/hooks/use-heatmap";
 import { Treemap } from "@/components/heatmap/treemap";
 import { HeatmapPeriod } from "@/types/heatmap";
@@ -31,10 +30,7 @@ function formatTime(seconds: number): string {
 export function HeatmapPage() {
   const [period, setPeriod] = useState<HeatmapPeriod>("1d");
 
-  const { data, isLoading, error, secondsUntilRefresh, refresh } = useHeatmap({
-    universe: "sp500",
-    period,
-  });
+  const { data, isLoading, error, secondsUntilRefresh } = useHeatmap(period);
 
   return (
     <div className="h-full w-full p-4">
@@ -60,29 +56,16 @@ export function HeatmapPage() {
             </Select>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">
-              {isLoading ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Loading...
-                </span>
-              ) : (
-                `Refreshes in ${formatTime(secondsUntilRefresh)}`
-              )}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="h-7 px-2 text-xs hover:bg-white/10"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
+          <span className="text-xs text-muted-foreground">
+            {isLoading ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              `Refreshes in ${formatTime(secondsUntilRefresh)}`
+            )}
+          </span>
         </div>
 
         {/* Heatmap content */}

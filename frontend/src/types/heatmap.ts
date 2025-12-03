@@ -17,6 +17,7 @@ export interface HeatmapResponse {
   period: string;
   universe: string;
   generated_at: string;
+  cached_at: number; // Unix timestamp (ms) when data was fetched from yfinance
 }
 
 export type HeatmapPeriod = "1d" | "1w" | "1m" | "3m" | "ytd";

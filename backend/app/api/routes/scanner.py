@@ -395,14 +395,13 @@ async def get_universes():
 
 @router.get("/heatmap", tags=["Heatmap"])
 async def get_heatmap(
-    universe: str = Query("sp100", description="Stock universe: sp100 or sp500"),
     period: str = Query("1d", description="Time period: 1d, 1w, 1m, 3m, ytd"),
 ):
     """
-    Get sector heatmap data with stock performance grouped by sector.
+    Get S&P 500 sector heatmap data with stock performance grouped by sector.
     Returns stocks with price changes and market cap for treemap visualization.
     """
-    return await heatmap_service.get_heatmap(universe=universe, period=period)
+    return await heatmap_service.get_heatmap(period=period)
 
 
 # =============================================================================

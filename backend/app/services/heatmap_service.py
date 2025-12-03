@@ -9,7 +9,7 @@ import yfinance as yf
 import pandas as pd
 
 from app.models.responses import HeatmapStock, HeatmapSector, HeatmapResponse
-from app.utils.ticker_lists import get_tickers
+from app.utils.ticker_lists import SP500_TICKERS
 from app.services.cache_service import cache_service
 
 
@@ -36,16 +36,16 @@ class HeatmapService:
     def __init__(self):
         self.executor = ThreadPoolExecutor(max_workers=10)
 
-    async def get_heatmap(self, universe: str = "sp100", period: str = "1d") -> HeatmapResponse:
+    async def get_heatmap(self, period: str = "1d") -> HeatmapResponse:
         """
-        Generate heatmap data grouped by sector.
+        Generate S&P 500 heatmap data grouped by sector.
         """
-        cache_key = f"heatmap_{universe}_{period}"
+        cache_key = f"heatmap_sp500_{period}"
         cached = cache_service.get(cache_key)
         if cached:
             return HeatmapResponse(**cached)
 
-        tickers = get_tickers(universe)
+        tickers = SP500_TICKERS
 
         loop = asyncio.get_event_loop()
 
@@ -122,11 +122,13 @@ class HeatmapService:
         changes = await loop.run_in_executor(self.executor, fetch_data)
 
         if not changes:
+            now = datetime.now()
             return HeatmapResponse(
                 sectors=[],
                 period=period,
-                universe=universe,
-                generated_at=datetime.now().isoformat(),
+                universe="sp500",
+                generated_at=now.isoformat(),
+                cached_at=int(now.timestamp() * 1000),
             )
 
         # Use static info data (loaded from sp500_info.json at startup)
@@ -135,7 +137,7 @@ class HeatmapService:
 
         if not info_data:
             # Fallback: fetch info dynamically (slow)
-            info_cache_key = f"heatmap_info_{universe}"
+            info_cache_key = "heatmap_info_sp500"
             info_data = cache_service.get(info_cache_key)
 
             if not info_data:
@@ -183,14 +185,18 @@ class HeatmapService:
             reverse=True
         )
 
+        now = datetime.now()
+        cached_at = int(now.timestamp() * 1000)  # Unix timestamp in ms
+
         response = HeatmapResponse(
             sectors=sectors,
             period=period,
-            universe=universe,
-            generated_at=datetime.now().isoformat(),
+            universe="sp500",
+            generated_at=now.isoformat(),
+            cached_at=cached_at,
         )
 
-        # Cache for 2 minutes (less than refresh interval)
+        # Cache for 2 minutes (synced with frontend CACHE_TTL)
         cache_service.set(cache_key, response.model_dump(), ttl=120)
 
         return response

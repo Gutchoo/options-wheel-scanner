@@ -18,10 +18,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import yfinance as yf
 
-# Add parent directory to path to import from app
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.utils.ticker_lists import SP500_TICKERS
+def load_sp500_tickers() -> list[str]:
+    """Load S&P 500 tickers from the JSON file."""
+    tickers_path = Path(__file__).parent.parent / "app" / "data" / "sp500_tickers.json"
+
+    with open(tickers_path, "r") as f:
+        data = json.load(f)
+
+    return data["tickers"]
 
 
 def fetch_ticker_info(ticker: str) -> dict | None:
@@ -31,11 +36,67 @@ def fetch_ticker_info(ticker: str) -> dict | None:
         info = t.info
 
         return {
+            # Basic Info
             "ticker": ticker,
             "name": info.get("shortName") or info.get("longName") or ticker,
             "sector": info.get("sector") or "Other",
             "industry": info.get("industry") or "Other",
             "market_cap": info.get("marketCap"),
+
+            # Valuation
+            "trailing_pe": info.get("trailingPE"),
+            "forward_pe": info.get("forwardPE"),
+            "price_to_book": info.get("priceToBook"),
+            "price_to_sales": info.get("priceToSalesTrailing12Months"),
+
+            # Dividends
+            "dividend_yield": info.get("dividendYield"),
+            "dividend_rate": info.get("dividendRate"),
+            "payout_ratio": info.get("payoutRatio"),
+
+            # Financials
+            "profit_margins": info.get("profitMargins"),
+            "operating_margins": info.get("operatingMargins"),
+            "return_on_equity": info.get("returnOnEquity"),
+            "return_on_assets": info.get("returnOnAssets"),
+
+            # Growth
+            "revenue_growth": info.get("revenueGrowth"),
+            "earnings_growth": info.get("earningsGrowth"),
+
+            # Volatility & Price
+            "beta": info.get("beta"),
+            "fifty_two_week_change": info.get("52WeekChange"),
+            "fifty_two_week_high": info.get("fiftyTwoWeekHigh"),
+            "fifty_two_week_low": info.get("fiftyTwoWeekLow"),
+
+            # Liquidity
+            "average_volume": info.get("averageVolume"),
+            "average_volume_10day": info.get("averageVolume10days"),
+
+            # Analyst
+            "recommendation_mean": info.get("recommendationMean"),
+            "recommendation_key": info.get("recommendationKey"),
+            "target_mean_price": info.get("targetMeanPrice"),
+            "target_high_price": info.get("targetHighPrice"),
+            "target_low_price": info.get("targetLowPrice"),
+            "number_of_analyst_opinions": info.get("numberOfAnalystOpinions"),
+
+            # Short Interest
+            "short_ratio": info.get("shortRatio"),
+            "short_percent_of_float": info.get("shortPercentOfFloat"),
+
+            # Earnings
+            "earnings_timestamp": info.get("earningsTimestamp"),
+
+            # Additional
+            "current_price": info.get("currentPrice"),
+            "book_value": info.get("bookValue"),
+            "total_cash": info.get("totalCash"),
+            "total_debt": info.get("totalDebt"),
+            "total_revenue": info.get("totalRevenue"),
+            "ebitda": info.get("ebitda"),
+            "free_cashflow": info.get("freeCashflow"),
         }
     except Exception as e:
         print(f"  Error fetching {ticker}: {e}")
@@ -49,7 +110,10 @@ def fetch_ticker_info(ticker: str) -> dict | None:
 
 
 def main():
-    print(f"Fetching info for {len(SP500_TICKERS)} tickers...")
+    # Load tickers from JSON file
+    tickers = load_sp500_tickers()
+
+    print(f"Fetching info for {len(tickers)} tickers...")
     print("This will take a few minutes...\n")
 
     results = {}
@@ -59,7 +123,7 @@ def main():
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_ticker = {
             executor.submit(fetch_ticker_info, ticker): ticker
-            for ticker in SP500_TICKERS
+            for ticker in tickers
         }
 
         completed = 0
@@ -71,9 +135,9 @@ def main():
                 info = future.result()
                 if info:
                     results[ticker] = info
-                    print(f"  [{completed}/{len(SP500_TICKERS)}] {ticker}: {info['sector']}")
+                    print(f"  [{completed}/{len(tickers)}] {ticker}: {info['sector']}")
             except Exception as e:
-                print(f"  [{completed}/{len(SP500_TICKERS)}] {ticker}: ERROR - {e}")
+                print(f"  [{completed}/{len(tickers)}] {ticker}: ERROR - {e}")
 
     elapsed = time.time() - start_time
     print(f"\nFetched {len(results)} tickers in {elapsed:.1f} seconds")
