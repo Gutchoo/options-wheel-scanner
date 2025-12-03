@@ -1,7 +1,9 @@
 import asyncio
+import json
 from typing import AsyncGenerator, Optional
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, date
+from pathlib import Path
 import time
 
 import yfinance as yf
@@ -16,6 +18,15 @@ from app.models.responses import (
 )
 from app.utils.ticker_lists import get_tickers
 from app.services.cache_service import cache_service
+
+# Load pre-cached S&P 500 stock info (PE ratios, names, etc.)
+_INFO_PATH = Path(__file__).parent.parent / "data" / "sp500_info.json"
+_SP500_INFO: dict = {}
+
+if _INFO_PATH.exists():
+    with open(_INFO_PATH) as f:
+        data = json.load(f)
+        _SP500_INFO = data.get("stocks", {})
 
 
 class ScannerService:
@@ -238,52 +249,72 @@ class ScannerService:
 
     async def _fetch_stock_info(self, tickers: list[str], prices: dict) -> dict:
         """
-        Fetch P/E ratios, names, and earnings dates for pre-filtered tickers only.
+        Get P/E ratios, names, and earnings dates from cached sp500_info.json.
+        Falls back to yfinance API only for tickers not in cache (custom tickers).
         """
-        cache_key = f"info_{hash(tuple(sorted(tickers[:20])))}"
-        cached = cache_service.get(cache_key)
-        if cached:
-            return cached
+        result = {}
+        uncached_tickers = []
 
-        loop = asyncio.get_event_loop()
-
-        def fetch():
-            result = {}
-
-            for ticker in tickers:
-                try:
-                    t = yf.Ticker(ticker)
-                    info = t.info
-
-                    # Get next earnings date from calendar
-                    next_earnings = None
+        # First pass: use cached data where available
+        for ticker in tickers:
+            if ticker in _SP500_INFO:
+                info = _SP500_INFO[ticker]
+                # Convert earnings_timestamp to date if present
+                next_earnings = None
+                if info.get("earnings_timestamp"):
                     try:
-                        calendar = t.calendar
-                        if calendar and isinstance(calendar, dict):
-                            earnings_dates = calendar.get("Earnings Date")
-                            if earnings_dates and isinstance(earnings_dates, list) and len(earnings_dates) > 0:
-                                next_earnings = earnings_dates[0]  # First date is the next one
+                        next_earnings = datetime.fromtimestamp(info["earnings_timestamp"]).date()
                     except Exception:
                         pass
 
-                    result[ticker] = {
-                        "price": prices.get(ticker),
-                        "pe_ratio": float(info.get("trailingPE")) if info.get("trailingPE") else None,
-                        "name": info.get("shortName", ticker),
-                        "next_earnings_date": next_earnings,
-                    }
-                except Exception:
-                    result[ticker] = {
-                        "price": prices.get(ticker),
-                        "pe_ratio": None,
-                        "name": ticker,
-                        "next_earnings_date": None,
-                    }
+                result[ticker] = {
+                    "price": prices.get(ticker),
+                    "pe_ratio": info.get("trailing_pe"),
+                    "name": info.get("name", ticker),
+                    "next_earnings_date": next_earnings,
+                }
+            else:
+                uncached_tickers.append(ticker)
 
-            return result
+        # Second pass: fetch from yfinance only for uncached tickers
+        if uncached_tickers:
+            loop = asyncio.get_event_loop()
 
-        result = await loop.run_in_executor(self.executor, fetch)
-        cache_service.set(cache_key, result, ttl=300)
+            def fetch_uncached():
+                uncached_result = {}
+                for ticker in uncached_tickers:
+                    try:
+                        t = yf.Ticker(ticker)
+                        info = t.info
+
+                        next_earnings = None
+                        try:
+                            calendar = t.calendar
+                            if calendar and isinstance(calendar, dict):
+                                earnings_dates = calendar.get("Earnings Date")
+                                if earnings_dates and isinstance(earnings_dates, list) and len(earnings_dates) > 0:
+                                    next_earnings = earnings_dates[0]
+                        except Exception:
+                            pass
+
+                        uncached_result[ticker] = {
+                            "price": prices.get(ticker),
+                            "pe_ratio": float(info.get("trailingPE")) if info.get("trailingPE") else None,
+                            "name": info.get("shortName", ticker),
+                            "next_earnings_date": next_earnings,
+                        }
+                    except Exception:
+                        uncached_result[ticker] = {
+                            "price": prices.get(ticker),
+                            "pe_ratio": None,
+                            "name": ticker,
+                            "next_earnings_date": None,
+                        }
+                return uncached_result
+
+            uncached_data = await loop.run_in_executor(self.executor, fetch_uncached)
+            result.update(uncached_data)
+
         return result
 
     def _filter_stocks(self, stock_data: dict, request: ScanRequest) -> list[str]:
