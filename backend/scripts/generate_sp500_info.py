@@ -142,20 +142,44 @@ def main():
     elapsed = time.time() - start_time
     print(f"\nFetched {len(results)} tickers in {elapsed:.1f} seconds")
 
-    # Save to JSON file
-    output_path = Path(__file__).parent.parent / "app" / "data" / "sp500_info.json"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    # Save S&P 500 to JSON file
+    data_dir = Path(__file__).parent.parent / "app" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
 
-    output_data = {
-        "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+    sp500_path = data_dir / "sp500_info.json"
+    generated_at = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+
+    sp500_data = {
+        "generated_at": generated_at,
         "count": len(results),
         "stocks": results,
     }
 
-    with open(output_path, "w") as f:
-        json.dump(output_data, f, indent=2)
+    with open(sp500_path, "w") as f:
+        json.dump(sp500_data, f, indent=2)
 
-    print(f"\nSaved to: {output_path}")
+    print(f"\nSaved S&P 500: {sp500_path}")
+
+    # Derive S&P 100 (top 100 by market cap) and save
+    stocks_by_cap = [
+        (ticker, info)
+        for ticker, info in results.items()
+        if info.get("market_cap")
+    ]
+    stocks_by_cap.sort(key=lambda x: x[1]["market_cap"], reverse=True)
+    sp100_stocks = dict(stocks_by_cap[:100])
+
+    sp100_path = data_dir / "sp100_info.json"
+    sp100_data = {
+        "generated_at": generated_at,
+        "count": len(sp100_stocks),
+        "stocks": sp100_stocks,
+    }
+
+    with open(sp100_path, "w") as f:
+        json.dump(sp100_data, f, indent=2)
+
+    print(f"Saved S&P 100: {sp100_path}")
 
     # Print sector summary
     sectors = {}
