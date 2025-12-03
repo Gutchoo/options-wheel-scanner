@@ -193,7 +193,7 @@ class ScannerService:
                     tickers,
                     period="1d",
                     progress=False,
-                    threads=True,
+                    threads=False,  # Disable threads to prevent memory leak
                     auto_adjust=False,
                 )
 

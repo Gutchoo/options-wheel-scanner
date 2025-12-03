@@ -58,7 +58,7 @@ class HeatmapService:
                 tickers,
                 period=yf_period,
                 progress=False,
-                threads=True,
+                threads=False,  # Disable threads to prevent memory leak
                 auto_adjust=False,
             )
 
