@@ -179,7 +179,7 @@ class ScannerService:
         Fetch only prices using bulk yf.download().
         This is fast and allows early filtering before expensive .info calls.
         """
-        cache_key = f"prices_{hash(tuple(sorted(tickers[:20])))}"
+        cache_key = f"prices_{hash(tuple(sorted(tickers)))}"
         cached = cache_service.get(cache_key)
         if cached:
             return cached
