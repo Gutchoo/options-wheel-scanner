@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navbar, Route } from "@/components/nav/navbar";
 import { PageCarousel } from "@/components/nav/page-carousel";
 import { ScannerPage } from "@/components/pages/scanner-page";
@@ -18,6 +18,18 @@ declare global {
 
 export default function HomePage() {
   const [activeRoute, setActiveRoute] = useState<Route>("scanner");
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+
+  // Navigate to snapshot page with a specific ticker
+  const handleTickerSelect = useCallback((ticker: string) => {
+    setSelectedTicker(ticker);
+    setActiveRoute("snapshot");
+  }, []);
+
+  // Clear selected ticker (used when user searches for a different ticker)
+  const handleTickerClear = useCallback(() => {
+    setSelectedTicker(null);
+  }, []);
 
   useEffect(() => {
     if (!window.UnicornStudio) {
@@ -50,9 +62,14 @@ export default function HomePage() {
       <div className="relative z-10 h-full w-full pt-20">
         <PageCarousel activeRoute={activeRoute}>
           {{
-            scanner: <ScannerPage />,
-            heatmap: <HeatmapPage />,
-            snapshot: <SnapshotPage />,
+            scanner: <ScannerPage onTickerSelect={handleTickerSelect} />,
+            heatmap: <HeatmapPage onTickerSelect={handleTickerSelect} />,
+            snapshot: (
+              <SnapshotPage
+                initialTicker={selectedTicker}
+                onTickerClear={handleTickerClear}
+              />
+            ),
           }}
         </PageCarousel>
       </div>

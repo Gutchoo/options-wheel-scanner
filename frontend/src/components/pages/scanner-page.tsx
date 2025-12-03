@@ -5,7 +5,11 @@ import { ResultsTable } from "@/components/results/results-table";
 import { useScanFilters } from "@/hooks/use-scan-filters";
 import { useScanner } from "@/hooks/use-scanner";
 
-export function ScannerPage() {
+interface ScannerPageProps {
+  onTickerSelect?: (ticker: string) => void;
+}
+
+export function ScannerPage({ onTickerSelect }: ScannerPageProps) {
   const { filters, updateFilter, resetFilters } = useScanFilters();
   const {
     results,
@@ -51,6 +55,7 @@ export function ScannerPage() {
             tickersScanned={tickersScanned}
             tickersTotal={tickersTotal}
             currentTicker={currentTicker}
+            onTickerClick={onTickerSelect}
           />
         </main>
       </div>

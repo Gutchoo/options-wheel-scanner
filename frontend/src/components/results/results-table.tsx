@@ -1,9 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { DataTable } from "./data-table";
-import { columns } from "./columns";
+import { createColumns } from "./columns";
 import { OptionResult } from "@/types/option";
-import { Loader2, AlertCircle } from "lucide-react";
 
 interface ResultsTableProps {
   results: OptionResult[];
@@ -14,6 +14,7 @@ interface ResultsTableProps {
   tickersScanned: number;
   tickersTotal: number;
   currentTicker: string | null;
+  onTickerClick?: (ticker: string) => void;
 }
 
 export function ResultsTable({
@@ -25,7 +26,10 @@ export function ResultsTable({
   tickersScanned,
   tickersTotal,
   currentTicker,
+  onTickerClick,
 }: ResultsTableProps) {
+  const columns = useMemo(() => createColumns(onTickerClick), [onTickerClick]);
+
   return (
     <DataTable
       columns={columns}

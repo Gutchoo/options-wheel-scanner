@@ -396,13 +396,13 @@ async def get_ticker_snapshot(ticker: str):
         # Build price section
         current_price = info.get("regularMarketPrice") or info.get("currentPrice")
         prev_close = info.get("regularMarketPreviousClose") or info.get("previousClose")
-        change = (current_price - prev_close) if current_price and prev_close else None
-        change_percent = (change / prev_close * 100) if change and prev_close else None
+        change = (current_price - prev_close) if current_price is not None and prev_close is not None else None
+        change_percent = (change / prev_close * 100) if change is not None and prev_close else None
 
         price = {
             "current": current_price,
-            "change": round(change, 2) if change else None,
-            "change_percent": round(change_percent, 2) if change_percent else None,
+            "change": round(change, 2) if change is not None else None,
+            "change_percent": round(change_percent, 2) if change_percent is not None else None,
             "day_high": info.get("dayHigh") or info.get("regularMarketDayHigh"),
             "day_low": info.get("dayLow") or info.get("regularMarketDayLow"),
             "prev_close": prev_close,
@@ -782,9 +782,13 @@ async def get_memory_usage():
     process = psutil.Process(os.getpid())
     mem = process.memory_info()
 
+    # Access cache keys with lock to avoid race condition
+    with cache_service._lock:
+        cache_keys = list(cache_service._cache.keys())
+
     return {
         "rss_mb": round(mem.rss / 1024 / 1024, 2),  # Actual RAM used
-        "cache_keys": list(cache_service._cache.keys()),
+        "cache_keys": cache_keys,
         "gc_counts": gc.get_count(),  # (gen0, gen1, gen2) object counts
     }
 

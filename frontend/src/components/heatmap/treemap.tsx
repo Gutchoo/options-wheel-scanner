@@ -6,6 +6,7 @@ import { useTransitionReady } from "@/components/nav/page-carousel";
 
 interface TreemapProps {
   sectors: HeatmapSector[];
+  onTickerClick?: (ticker: string) => void;
 }
 
 // Calculate color based on percentage change - frosted transparent style
@@ -185,9 +186,10 @@ function layoutRow<T>(
 interface StockTileProps {
   stock: HeatmapStock;
   rect: Rect;
+  onClick?: () => void;
 }
 
-const StockTile = memo(function StockTile({ stock, rect }: StockTileProps) {
+const StockTile = memo(function StockTile({ stock, rect, onClick }: StockTileProps) {
   const colors = getChangeColor(stock.change);
 
   // Minimum dimensions for showing content
@@ -217,6 +219,7 @@ const StockTile = memo(function StockTile({ stock, rect }: StockTileProps) {
         willChange: "opacity",
       }}
       title={`${stock.name} (${stock.ticker})\n$${stock.price.toFixed(2)}\n${stock.change >= 0 ? "+" : ""}${stock.change.toFixed(2)}%`}
+      onClick={onClick}
     >
       <div className="h-full w-full flex flex-col items-center justify-center text-white">
         {showTicker ? (
@@ -257,9 +260,10 @@ const StockTile = memo(function StockTile({ stock, rect }: StockTileProps) {
 interface SectorBlockProps {
   sector: HeatmapSector;
   rect: Rect;
+  onTickerClick?: (ticker: string) => void;
 }
 
-const SectorBlock = memo(function SectorBlock({ sector, rect }: SectorBlockProps) {
+const SectorBlock = memo(function SectorBlock({ sector, rect, onTickerClick }: SectorBlockProps) {
   const headerHeight = 16;
 
   const contentRect: Rect = {
@@ -339,6 +343,7 @@ const SectorBlock = memo(function SectorBlock({ sector, rect }: SectorBlockProps
                 key={item.data.ticker}
                 stock={item.data}
                 rect={item.rect}
+                onClick={() => onTickerClick?.(item.data.ticker)}
               />
             )
         )}
@@ -347,7 +352,7 @@ const SectorBlock = memo(function SectorBlock({ sector, rect }: SectorBlockProps
   );
 });
 
-export function Treemap({ sectors }: TreemapProps) {
+export function Treemap({ sectors, onTickerClick }: TreemapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -442,6 +447,7 @@ export function Treemap({ sectors }: TreemapProps) {
                 key={item.data.name}
                 sector={item.data}
                 rect={item.rect}
+                onTickerClick={onTickerClick}
               />
             )
         )

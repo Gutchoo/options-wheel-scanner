@@ -4,23 +4,37 @@ import { ColumnDef } from "@tanstack/react-table";
 import { OptionResult } from "@/types/option";
 import { Badge } from "@/components/ui/badge";
 
-export const columns: ColumnDef<OptionResult>[] = [
-  {
-    id: "ticker",
-    accessorKey: "ticker",
-    size: 70,
-    header: ({ column }) => (
-      <span
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground"
-      >
-        Ticker
-      </span>
-    ),
-    cell: ({ row }) => (
-      <span className="font-medium">{row.getValue("ticker")}</span>
-    ),
-  },
+export function createColumns(
+  onTickerClick?: (ticker: string) => void
+): ColumnDef<OptionResult>[] {
+  return [
+    {
+      id: "ticker",
+      accessorKey: "ticker",
+      size: 70,
+      header: ({ column }) => (
+        <span
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="cursor-pointer hover:text-foreground"
+        >
+          Ticker
+        </span>
+      ),
+      cell: ({ row }) => {
+        const ticker = row.getValue("ticker") as string;
+        if (onTickerClick) {
+          return (
+            <button
+              onClick={() => onTickerClick(ticker)}
+              className="font-medium text-primary hover:underline cursor-pointer"
+            >
+              {ticker}
+            </button>
+          );
+        }
+        return <span className="font-medium">{ticker}</span>;
+      },
+    },
   {
     id: "option_type",
     accessorKey: "option_type",
@@ -242,4 +256,5 @@ export const columns: ColumnDef<OptionResult>[] = [
       return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     },
   },
-];
+  ];
+}
