@@ -193,7 +193,7 @@ class ScannerService:
                     tickers,
                     period="1d",
                     progress=False,
-                    threads=False,  # Disable threads to prevent memory leak
+                    threads=True,
                     auto_adjust=False,
                 )
 
@@ -223,7 +223,7 @@ class ScannerService:
             return result
 
         result = await loop.run_in_executor(self.executor, fetch)
-        cache_service.set(cache_key, result, ttl=300)
+        cache_service.set(cache_key, result, ttl=600)  # 10 minute cache
         return result
 
     def _filter_by_price(self, prices: dict, request: ScanRequest) -> list[str]:

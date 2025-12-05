@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { HeatmapResponse, HeatmapPeriod } from "@/types/heatmap";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour - synced with backend
+const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 hours - synced with backend
 
 interface CacheEntry {
   data: HeatmapResponse;

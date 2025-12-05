@@ -202,8 +202,8 @@ class HeatmapService:
             cached_at=cached_at,
         )
 
-        # Cache for 1 hour to minimize memory-leaking yf.download calls
-        cache_service.set(cache_key, response.model_dump(), ttl=3600)
+        # Cache for 3 hours to minimize memory-leaking yf.download calls
+        cache_service.set(cache_key, response.model_dump(), ttl=10800)
 
         return response
 
