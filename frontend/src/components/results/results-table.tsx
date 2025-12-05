@@ -14,6 +14,7 @@ interface ResultsTableProps {
   tickersScanned: number;
   tickersTotal: number;
   currentTicker: string | null;
+  priceDataTimestamp: number | null;
   onTickerClick?: (ticker: string) => void;
 }
 
@@ -26,6 +27,7 @@ export function ResultsTable({
   tickersScanned,
   tickersTotal,
   currentTicker,
+  priceDataTimestamp,
   onTickerClick,
 }: ResultsTableProps) {
   const columns = useMemo(() => createColumns(onTickerClick), [onTickerClick]);
@@ -41,6 +43,7 @@ export function ResultsTable({
       tickersScanned={tickersScanned}
       tickersTotal={tickersTotal}
       currentTicker={currentTicker}
+      priceDataTimestamp={priceDataTimestamp}
     />
   );
 }

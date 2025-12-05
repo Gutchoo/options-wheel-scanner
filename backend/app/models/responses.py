@@ -50,6 +50,7 @@ class ScanCompleteEvent(BaseModel):
     status: ScanStatus
     total_results: int
     scan_duration_seconds: float
+    price_data_timestamp: Optional[float] = None  # Unix timestamp (ms) of when price data was fetched
 
 
 # Heatmap models

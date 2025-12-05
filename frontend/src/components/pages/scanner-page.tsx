@@ -20,6 +20,7 @@ export function ScannerPage({ onTickerSelect }: ScannerPageProps) {
     tickersScanned,
     tickersTotal,
     currentTicker,
+    priceDataTimestamp,
     scan,
     cancelScan,
   } = useScanner();
@@ -55,6 +56,7 @@ export function ScannerPage({ onTickerSelect }: ScannerPageProps) {
             tickersScanned={tickersScanned}
             tickersTotal={tickersTotal}
             currentTicker={currentTicker}
+            priceDataTimestamp={priceDataTimestamp}
             onTickerClick={onTickerSelect}
           />
         </main>

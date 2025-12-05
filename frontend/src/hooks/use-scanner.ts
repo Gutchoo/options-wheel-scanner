@@ -13,6 +13,7 @@ interface ScanState {
   tickersScanned: number;
   tickersTotal: number;
   currentTicker: string | null;
+  priceDataTimestamp: number | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -27,6 +28,7 @@ export function useScanner() {
     tickersScanned: 0,
     tickersTotal: 0,
     currentTicker: null,
+    priceDataTimestamp: null,
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -49,6 +51,7 @@ export function useScanner() {
       tickersScanned: 0,
       tickersTotal: 0,
       currentTicker: null,
+      priceDataTimestamp: null,
     }));
 
     try {
@@ -105,7 +108,22 @@ export function useScanner() {
             try {
               const data = JSON.parse(line.slice(6));
 
-              if (data.status !== undefined) {
+              if (data.total_results !== undefined) {
+                // Complete event (check first since it also has status field)
+                setState((prev) => ({
+                  ...prev,
+                  isScanning: false,
+                  progress: 100,
+                  message: `Scan complete: ${data.total_results} results in ${data.scan_duration_seconds}s`,
+                  priceDataTimestamp: data.price_data_timestamp || null,
+                }));
+              } else if (data.ticker !== undefined) {
+                // Result event
+                setState((prev) => ({
+                  ...prev,
+                  results: [...prev.results, data],
+                }));
+              } else if (data.status !== undefined) {
                 // Progress event
                 setState((prev) => ({
                   ...prev,
@@ -114,20 +132,6 @@ export function useScanner() {
                   tickersScanned: data.tickers_scanned,
                   tickersTotal: data.tickers_total,
                   currentTicker: data.current_ticker,
-                }));
-              } else if (data.ticker !== undefined) {
-                // Result event
-                setState((prev) => ({
-                  ...prev,
-                  results: [...prev.results, data],
-                }));
-              } else if (data.total_results !== undefined) {
-                // Complete event
-                setState((prev) => ({
-                  ...prev,
-                  isScanning: false,
-                  progress: 100,
-                  message: `Scan complete: ${data.total_results} results in ${data.scan_duration_seconds}s`,
                 }));
               }
             } catch {

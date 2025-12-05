@@ -57,6 +57,18 @@ interface DataTableProps<TData, TValue> {
   tickersScanned?: number;
   tickersTotal?: number;
   currentTicker?: string | null;
+  priceDataTimestamp?: number | null;
+}
+
+// Format timestamp for display
+function formatPriceTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function DataTable<TData, TValue>({
@@ -69,6 +81,7 @@ export function DataTable<TData, TValue>({
   tickersScanned = 0,
   tickersTotal = 0,
   currentTicker = null,
+  priceDataTimestamp = null,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -133,8 +146,10 @@ export function DataTable<TData, TValue>({
           </div>
         )}
 
-        {!isScanning && message && !error && (
-          <p className="text-sm text-muted-foreground">{message}</p>
+        {!isScanning && priceDataTimestamp && (
+          <p className="text-sm text-muted-foreground">
+            Prices as of {formatPriceTimestamp(priceDataTimestamp)}
+          </p>
         )}
       </div>
 

@@ -72,7 +72,7 @@ class ScannerService:
         }
 
         # Step 2: Batch fetch prices only (1 API call)
-        prices = await self._fetch_prices_batch(tickers)
+        prices, price_data_timestamp = await self._fetch_prices_batch(tickers)
 
         # Step 3: Filter by price/collateral BEFORE expensive .info calls
         price_filtered = self._filter_by_price(prices, request)
@@ -116,6 +116,7 @@ class ScannerService:
                     status=ScanStatus.COMPLETE,
                     total_results=0,
                     scan_duration_seconds=round(time.time() - start_time, 2),
+                    price_data_timestamp=price_data_timestamp,
                 ).model_dump(),
             }
             return
@@ -171,23 +172,26 @@ class ScannerService:
                 status=ScanStatus.COMPLETE,
                 total_results=results_count,
                 scan_duration_seconds=round(time.time() - start_time, 2),
+                price_data_timestamp=price_data_timestamp,
             ).model_dump(),
         }
 
-    async def _fetch_prices_batch(self, tickers: list[str]) -> dict:
+    async def _fetch_prices_batch(self, tickers: list[str]) -> tuple[dict, float]:
         """
         Fetch only prices using bulk yf.download().
         This is fast and allows early filtering before expensive .info calls.
+        Returns (prices_dict, timestamp_ms) where timestamp is when data was fetched.
         """
         cache_key = f"prices_{hash(tuple(sorted(tickers)))}"
         cached = cache_service.get(cache_key)
         if cached:
-            return cached
+            return cached["prices"], cached["timestamp"]
 
         loop = asyncio.get_event_loop()
 
         def fetch():
             result = {}
+            timestamp = time.time() * 1000  # Current time in ms
             try:
                 data = yf.download(
                     tickers,
@@ -198,7 +202,7 @@ class ScannerService:
                 )
 
                 if data.empty:
-                    return result
+                    return result, timestamp
 
                 # Handle MultiIndex columns (multiple tickers)
                 if isinstance(data.columns, pd.MultiIndex):
@@ -220,11 +224,11 @@ class ScannerService:
             except Exception as e:
                 print(f"Error in fetch: {e}")
 
-            return result
+            return result, timestamp
 
-        result = await loop.run_in_executor(self.executor, fetch)
-        cache_service.set(cache_key, result, ttl=600)  # 10 minute cache
-        return result
+        result, timestamp = await loop.run_in_executor(self.executor, fetch)
+        cache_service.set(cache_key, {"prices": result, "timestamp": timestamp}, ttl=600)  # 10 minute cache
+        return result, timestamp
 
     def _filter_by_price(self, prices: dict, request: ScanRequest) -> list[str]:
         """
