@@ -37,6 +37,8 @@ const columnLabels: Record<string, string> = {
   expiration: "Expiration",
   dte: "DTE",
   premium: "Premium",
+  bid: "Bid",
+  ask: "Ask",
   volume: "Volume",
   open_interest: "OI",
   implied_volatility: "IV",
@@ -182,7 +184,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="whitespace-nowrap relative font-semibold"
+                      className="whitespace-nowrap relative font-semibold [text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]"
                       style={{ width: header.getSize() }}
                     >
                       {header.isPlaceholder
@@ -221,7 +223,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="font-semibold"
+                      className="font-semibold [text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

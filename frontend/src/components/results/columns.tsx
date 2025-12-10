@@ -91,14 +91,9 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+        className="cursor-pointer hover:text-foreground"
       >
         Expiration
-      </span>
-    ),
-    cell: ({ row }) => (
-      <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-        {row.getValue<string>("expiration")}
       </span>
     ),
   },
@@ -109,14 +104,9 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground [text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]"
+        className="cursor-pointer hover:text-foreground"
       >
         DTE
-      </span>
-    ),
-    cell: ({ row }) => (
-      <span className="[text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]">
-        {row.getValue<number>("dte")}
       </span>
     ),
   },
@@ -127,16 +117,46 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+        className="cursor-pointer hover:text-foreground"
       >
         Premium
       </span>
     ),
-    cell: ({ row }) => (
-      <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-        ${row.getValue<number>("premium").toFixed(2)}
+    cell: ({ row }) => `$${row.getValue<number>("premium").toFixed(2)}`,
+  },
+  {
+    id: "bid",
+    accessorKey: "bid",
+    size: 70,
+    header: ({ column }) => (
+      <span
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="cursor-pointer hover:text-foreground"
+      >
+        Bid
       </span>
     ),
+    cell: ({ row }) => {
+      const bid = row.getValue<number | null>("bid");
+      return bid ? `$${bid.toFixed(2)}` : "-";
+    },
+  },
+  {
+    id: "ask",
+    accessorKey: "ask",
+    size: 70,
+    header: ({ column }) => (
+      <span
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="cursor-pointer hover:text-foreground"
+      >
+        Ask
+      </span>
+    ),
+    cell: ({ row }) => {
+      const ask = row.getValue<number | null>("ask");
+      return ask ? `$${ask.toFixed(2)}` : "-";
+    },
   },
   {
     id: "volume",
