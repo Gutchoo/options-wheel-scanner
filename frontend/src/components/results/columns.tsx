@@ -91,9 +91,14 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground"
+        className="cursor-pointer hover:text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
       >
         Expiration
+      </span>
+    ),
+    cell: ({ row }) => (
+      <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        {row.getValue<string>("expiration")}
       </span>
     ),
   },
@@ -104,9 +109,14 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground"
+        className="cursor-pointer hover:text-foreground [text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]"
       >
         DTE
+      </span>
+    ),
+    cell: ({ row }) => (
+      <span className="[text-shadow:_0_1px_0_rgb(0_0_0),_0_2px_4px_rgb(0_0_0),_0_0_8px_rgb(0_0_0_/_50%)]">
+        {row.getValue<number>("dte")}
       </span>
     ),
   },
@@ -117,12 +127,16 @@ export function createColumns(
     header: ({ column }) => (
       <span
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="cursor-pointer hover:text-foreground"
+        className="cursor-pointer hover:text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
       >
         Premium
       </span>
     ),
-    cell: ({ row }) => `$${row.getValue<number>("premium").toFixed(2)}`,
+    cell: ({ row }) => (
+      <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        ${row.getValue<number>("premium").toFixed(2)}
+      </span>
+    ),
   },
   {
     id: "volume",

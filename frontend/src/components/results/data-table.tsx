@@ -182,7 +182,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="whitespace-nowrap relative"
+                      className="whitespace-nowrap relative font-semibold"
                       style={{ width: header.getSize() }}
                     >
                       {header.isPlaceholder
@@ -221,6 +221,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      className="font-semibold"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
