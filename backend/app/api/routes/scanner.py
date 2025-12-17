@@ -778,17 +778,23 @@ async def get_memory_usage():
     import psutil
     import os
     import gc
+    import sys
 
     process = psutil.Process(os.getpid())
     mem = process.memory_info()
 
-    # Access cache keys with lock to avoid race condition
+    # Access cache with lock to avoid race condition
     with cache_service._lock:
         cache_keys = list(cache_service._cache.keys())
+        cache_size_bytes = sum(
+            sys.getsizeof(v) for v, _ in cache_service._cache.values()
+        )
 
     return {
         "rss_mb": round(mem.rss / 1024 / 1024, 2),  # Actual RAM used
         "cache_keys": cache_keys,
+        "cache_count": len(cache_keys),
+        "cache_size_kb": round(cache_size_bytes / 1024, 2),
         "gc_counts": gc.get_count(),  # (gen0, gen1, gen2) object counts
     }
 
