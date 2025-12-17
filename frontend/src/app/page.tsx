@@ -7,6 +7,13 @@ import { ScannerPage } from "@/components/pages/scanner-page";
 import { HeatmapPage } from "@/components/pages/heatmap-page";
 import { SnapshotPage } from "@/components/pages/snapshot-page";
 import { DebugPanel } from "@/components/debug/debug-panel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 declare global {
   interface Window {
@@ -21,6 +28,7 @@ export default function HomePage() {
   const [activeRoute, setActiveRoute] = useState<Route>("scanner");
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [showUnicornBg, setShowUnicornBg] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
   // Navigate to snapshot page with a specific ticker
   const handleTickerSelect = useCallback((ticker: string) => {
@@ -63,6 +71,48 @@ export default function HomePage() {
       >
         {showUnicornBg ? "◈ Unicorn" : "■ Plain"}
       </button>
+
+      {/* Disclaimer Button */}
+      <button
+        onClick={() => setShowDisclaimer(true)}
+        className="fixed top-4 right-4 z-50 px-3 py-1.5 text-xs font-medium rounded-full border border-white/10 bg-black/30 backdrop-blur-xl text-white/60 hover:text-white hover:bg-black/50 transition-colors"
+      >
+        ⚠ Disclaimer
+      </button>
+
+      {/* Disclaimer Modal */}
+      <Dialog open={showDisclaimer} onOpenChange={setShowDisclaimer}>
+        <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Disclaimer</DialogTitle>
+            <DialogDescription className="text-white/70 space-y-4 pt-4">
+              <p>
+                This website is a personal project created for educational and
+                informational purposes only. The data, analysis, and information
+                provided on this site should not be considered as financial advice,
+                investment recommendations, or a solicitation to buy or sell any
+                securities.
+              </p>
+              <p>
+                <strong className="text-white/90">No Investment Advice:</strong> Nothing
+                on this website constitutes professional financial, investment, legal,
+                or tax advice. Always consult with a qualified financial advisor before
+                making any investment decisions.
+              </p>
+              <p>
+                <strong className="text-white/90">Your Responsibility:</strong> Any
+                trading decisions you make are solely your own responsibility. The
+                creator of this website assumes no liability for any losses incurred
+                from actions taken based on information presented here.
+              </p>
+              <p className="text-white/50 text-xs pt-2">
+                By using this website, you acknowledge that you have read and understood
+                this disclaimer.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
 
       {/* Background - Plain black (base layer) */}
       <div className="absolute inset-0 w-full h-full bg-black" />
